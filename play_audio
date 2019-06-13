@@ -1,5 +1,7 @@
-mpv --ytdl-format=bestaudio/best --vo=null "$1" -o ~/$1.mp3 --no-video
+#!/bin/bash
 
-mpv "$1.mp3"
+mpv --ytdl-format=bestaudio/best "$1" -o ~/temp.flac
 
-rm "$1.mp3"
+mpv ~/temp.flac
+
+rm ~/temp.flac
