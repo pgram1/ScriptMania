@@ -1,2 +1,3 @@
 #!/bin/bash
-ls -A *.m3u8 | dmenu -l 30 | xargs -I {} mpv "{}"
+cd ~/.playlists/
+ls -A *.m3u8 | dmenu -l 30 | xargs -I {} mpv --vo=null "{}"
