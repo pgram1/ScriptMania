@@ -1,0 +1,5 @@
+#!/bin/bash
+
+ffmpeg -f lavfi -i nullsrc=s=1280x720 -filter_complex \
+"geq=random(1)*255:128:128" \
+-t /dev/video0
