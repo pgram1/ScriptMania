@@ -1,0 +1,2 @@
+#!/bin/bash
+ffmpeg -video_size 1280x800 -framerate 10 -f x11grab -i $DISPLAY $RANDOM.mkv
