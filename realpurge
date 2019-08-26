@@ -1,0 +1,2 @@
+#!/bin/bash
+reset;apt-get purge -fy $1;apt-get remove -fy $1;myupdate
