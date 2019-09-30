@@ -1,0 +1,4 @@
+DATETIME=$( date +"%l:%M%P %F %A" )
+BATTERYSTATE=$( acpi -b | awk '{print $4}' | tr -d ',' )
+
+ratpoison -c "echo ⚡ ${BATTERYSTATE} |${DATETIME}"
