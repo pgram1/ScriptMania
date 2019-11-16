@@ -1,0 +1,12 @@
+#!/bin/bash
+
+link="$(youtube-dl -f bestaudio/best -g "$1")"
+
+ffmpeg -hide_banner -loglevel panic -nostats -i "$link" -c:a copy -vn ~/out.mkv
+
+wait
+
+killall -9 ffmpeg
+
+reset
+
