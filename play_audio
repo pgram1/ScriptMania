@@ -1,7 +1,24 @@
 #!/bin/bash
 
-mpv --ytdl-format=bestaudio/best "$1" -o ~/temp.flac
+#Too complex just for fun and security :)
 
-mpv ~/temp.flac
+link="$(youtube-dl -f bestaudio/best -g "$1")"
 
-rm ~/temp.flac
+ffmpeg -hide_banner -loglevel panic -nostats -i "$link" -c:a copy -vn ~/temp.mkv&
+
+while [[ ! -f ~/temp.mkv ]];
+do
+	sleep 5s
+done
+
+mpv --no-video ~/temp.mkv
+
+wait
+
+killall -9 ffmpeg
+killall -9 mpv
+
+rm ~/temp.mkv
+
+reset
+
