@@ -1,11 +1,24 @@
 #!/bin/bash
 
 ipv4=$(curl -4s "https://api.ipify.org")
+echo "----------"
 echo "My ipv4 is $ipv4"
 ipv6=$(curl -6s "https://api6.ipify.org")
 if [[ $ipv6 ]];
 then
+echo "----------"
 echo "My ipv6 is $ipv6"
 else
+echo "----------"
 echo "No ipv6"
 fi
+echo "----------"
+echo "Local ipv4"
+echo
+ip -4 -br -h addr
+echo "----------"
+echo "Local ipv6"
+echo
+ip -6 -br -h addr
+echo "----------"
+
