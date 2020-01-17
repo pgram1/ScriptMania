@@ -1,0 +1,5 @@
+while [[ true ]]
+do
+	host -a google.com
+	sleep 10s
+done
