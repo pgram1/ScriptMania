@@ -1,0 +1,48 @@
+#!/bin/bash
+
+#Goto implementation
+function goto
+{
+    label=$1
+    cmd=$(sed -n "/$label:/{:a;n;p;ba};" $0 | grep -v ':$')
+    eval "$cmd"
+    exit
+}
+
+start=${1:-"start"}
+
+goto $start
+
+start:
+#Script start
+
+check:
+
+echo "What is the address of the video file/playlist you want me to play? Link: "
+
+read Url
+
+echo "Alright!"
+
+youtube-dl -F "$Url"
+
+echo "What quality? (video+audio or single stream) : "
+
+read Qual
+
+replay:
+
+mpv --ytdl-format $Qual "$Url"
+
+echo "Press e to play something else, r to replay the song or any other key to terminate: "
+
+read Cond
+
+if [ "$Cond" == "e" ]; then
+	goto check
+fi
+
+if [ "$Cond" == "r" ]; then
+	goto replay
+fi
+
