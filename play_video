@@ -1,37 +1,25 @@
 #!/bin/bash
-
 while true; do
-
-    echo "What is the address of the video file/playlist you want me to play? Link: "
-
-    read Url
-
-    echo "Alright!"
-
-    youtube-dl -F "$Url"
-
-    echo "What quality? (video+audio or single stream) : "
-
-    read Qual
-
-    while true; do
-
-        mpv --ytdl-format $Qual "$Url"
-
-        echo "Press e to play something else, r to replay the song or any other key to terminate: "
-
-        read Cond
-
-        if [[ "$Cond" == "e" ]]
-        then
-	        break;
-        elif [[ "$Cond" == "r" ]]
-        then
-	        continue;
-	    else
-	        exit;
-        fi
-    
-    done
-
+	echo "What is the address of the stream's file/playlist? Link/URL:"
+	read Url
+	echo "Alright!"&&
+	echo "Loading format list..."&
+	youtube-dl -F "$Url"
+	echo "What quality?(video+audio or single stream):"
+	read Qual
+	while true; do
+		mpv --ytdl-format $Qual "$Url"
+		echo "Press e to play something else, r to replay the stream or any other key to terminate:"
+		read Cond
+		if [ "$Cond" == "e" ]
+		then
+			break;
+		elif [ "$Cond" == "r" ]
+		then
+			continue;
+		else
+			exit;
+		fi
+	done
 done
+
