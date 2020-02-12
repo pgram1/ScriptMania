@@ -1,0 +1,5 @@
+#!/bin/bash
+
+sudo chown -Rc username:username /home/username/
+sudo chown -Rc username:username /opt/
+
