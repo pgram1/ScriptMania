@@ -8,7 +8,7 @@ while true; do
 	echo "What quality?(video+audio or single stream):"
 	read -r Qual
 	while true; do
-		mpv --ytdl-format "$Qual" "$Url"
+		mpv --force-window=immediate --ytdl-format="$Qual" "$Url"
 		echo "Press e to play something else, r to replay the stream or any other key to terminate:"
 		read -r Cond
 		if [ "$Cond" == "e" ]
