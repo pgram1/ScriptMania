@@ -1,2 +1,2 @@
 echo "######### Press CTRL+C to end. It would be wise to clap once in the beginning of the recording and once at the end. #########";
-arecord -v -c 2 -r 384000 -t wav -f FLOAT > file.wav;
+arecord -v -c 2 -r 384000 -t wav -f FLOAT > "$1.wav";
