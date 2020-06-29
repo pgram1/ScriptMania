@@ -1,0 +1,26 @@
+#!/bin/bash
+while true; do
+	echo "What would be the name for those screenshots?:"
+	read -r Name
+	echo "Alright!"&&
+	i=0
+	while true; do
+		((i=i+1))
+		echo "Trying to capture $Name$i.png"
+		adb -d shell screencap -p "/sdcard/toPull/$Name$i.png"
+		echo "Press n to change screenshot names, r to take another screenshot or any other key to terminate:"
+		read -r Cond
+		if [ "$Cond" == "n" ]
+		then
+			break;
+		elif [ "$Cond" == "r" ]
+		then
+			continue;
+		else
+			adb pull "/sdcard/toPull/."
+			adb -d shell rm -rdf "/sdcard/toPull/*"
+			exit;
+		fi
+	done	
+done
+
