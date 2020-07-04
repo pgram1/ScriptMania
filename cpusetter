@@ -3,42 +3,42 @@
 #Configure cpu0
 echo "userspace" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor;
 echo "403000" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq;
-echo "1469000" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq;
+echo "1183000" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq;
 
 #Configure cpu1
 echo "userspace" > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor;
 echo "403000" > /sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq;
-echo "1469000" > /sys/devices/system/cpu/cpu1/cpufreq/scaling_max_freq;
+echo "1183000" > /sys/devices/system/cpu/cpu1/cpufreq/scaling_max_freq;
 
 #Configure cpu2
 echo "userspace" > /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor;
 echo "403000" > /sys/devices/system/cpu/cpu2/cpufreq/scaling_min_freq;
-echo "1469000" > /sys/devices/system/cpu/cpu2/cpufreq/scaling_max_freq;
+echo "1183000" > /sys/devices/system/cpu/cpu2/cpufreq/scaling_max_freq;
 
 #Configure cpu3
 echo "userspace" > /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor;
 echo "403000" > /sys/devices/system/cpu/cpu3/cpufreq/scaling_min_freq;
-echo "1469000" > /sys/devices/system/cpu/cpu3/cpufreq/scaling_max_freq;
+echo "1183000" > /sys/devices/system/cpu/cpu3/cpufreq/scaling_max_freq;
 
 #Configure cpu4
 echo "userspace" > /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor;
 echo "403000" > /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq;
-echo "1469000" > /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq;
+echo "1183000" > /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq;
 
 #Configure cpu5
 echo "userspace" > /sys/devices/system/cpu/cpu5/cpufreq/scaling_governor;
 echo "403000" > /sys/devices/system/cpu/cpu5/cpufreq/scaling_min_freq;
-echo "1469000" > /sys/devices/system/cpu/cpu5/cpufreq/scaling_max_freq;
+echo "1183000" > /sys/devices/system/cpu/cpu5/cpufreq/scaling_max_freq;
 
 #Configure cpu6
 echo "userspace" > /sys/devices/system/cpu/cpu6/cpufreq/scaling_governor;
 echo "403000" > /sys/devices/system/cpu/cpu6/cpufreq/scaling_min_freq;
-echo "1469000" > /sys/devices/system/cpu/cpu6/cpufreq/scaling_max_freq;
+echo "1183000" > /sys/devices/system/cpu/cpu6/cpufreq/scaling_max_freq;
 
 #Configure cpu7
 echo "userspace" > /sys/devices/system/cpu/cpu7/cpufreq/scaling_governor;
 echo "403000" > /sys/devices/system/cpu/cpu7/cpufreq/scaling_min_freq;
-echo "1469000" > /sys/devices/system/cpu/cpu7/cpufreq/scaling_max_freq;
+echo "1183000" > /sys/devices/system/cpu/cpu7/cpufreq/scaling_max_freq;
 
 #Checking root access
 id=`id`; id=`$busybox echo ${id#*=}`; id=`$busybox echo ${id%%\(*}`; id=`$busybox echo ${id%% *}`
