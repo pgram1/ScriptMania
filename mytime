@@ -1,1 +1,1 @@
-date +%r%n%D%n%A
+date "+%r %F %A"
