@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if [[ $# -eq 0 ]] ; then
+    printf 'File Merger\nUsage: merger [directory to search] [filename of output file]\n';
+    exit 0;
+fi
+
+find $1 -type f -printf '\n\n\n\n======> %p <======\n\n\n\n' -execdir cat '{}' \; > $2.txt
