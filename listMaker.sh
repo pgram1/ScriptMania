@@ -14,3 +14,12 @@ sed -e "s/?[^id].*//g" -i outProfileLinks;
 sed -e 's/^/https\:\/\/www.facebook.com\//' outProfileLinks | uniq > outProfileLinks;
 
 grep -Po "(?<=\<image style\=\"height\: 60px\; width\: 60px\;\" x\=\"0\" y\=\"0\" height\=\"100\%\" preserveAspectRatio\=\"xMidYMid slice\" width\=\"100\%\" xlink:href\=\")[^\"]+" outTrimmed > outProfileImages;
+
+mkdir images;
+
+cd images;
+iterator=1;
+while read p; do
+	curl "$p" -o $((iterator++)).jpg;
+done < ../outProfileImages;
+cd ..;
