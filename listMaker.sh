@@ -21,6 +21,6 @@ cd images;
 i=0
 while read p; do
     ((i++))
-    curl -s "$p" -o "${i}.jpg" &
+    curl -s "$p" -o ${i}.jpg &
 done < ../outProfileImages;
 cd ..;
