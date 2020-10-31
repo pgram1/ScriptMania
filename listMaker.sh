@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Search for "clearfix pbm".
-# Replace $2 with the correct classes from the html document
+# Search for "aria-label="Search Results"".
+# Replace $2 with the correct class from the html document (one that is after all the divs of profiles in the result list)
 
 sed -n "/<div aria-label\=\"Search Results\" role\=\"main\"/,/<div class=\"$2\">/p" $1 > out;
 
