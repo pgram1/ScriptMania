@@ -18,9 +18,9 @@ grep -Po "(?<=\<image style\=\"height\: 60px\; width\: 60px\;\" x\=\"0\" y\=\"0\
 mkdir images;
 
 cd images;
-i=0
+i=0;
 while read p; do
-    ((i++))
+    ((i++));
     curl -s "$p" -o ${i}.jpg &
 done < ../outProfileImages;
 cd ..;
