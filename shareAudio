@@ -1,0 +1,20 @@
+#!/bin/bash
+
+if [[ $1 == "start" ]]
+then
+pactl load-module module-null-sink sink_name=Combined_Output sink_properties=device.description=Combined_Output
+
+pactl load-module module-null-sink sink_name=Recorded_Sink sink_properties=device.description=Recorded_Sink
+
+pactl load-module module-loopback source=1 sink=Combined_Output # source number is number of microphone from "pactl list sources".
+
+pactl load-module module-loopback source=3 sink=Combined_Output
+
+pactl load-module module-loopback source=3 sink=alsa_output.pci-0000_02_04.0.analog-stereo # sink is the name of speakers from "pactl list sinks".
+
+#make sure to route every audio playback to Recorded_Sink
+
+elif [[ $1 == "stop" ]]
+then
+systemctl --user restart pulseaudio
+fi
