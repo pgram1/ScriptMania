@@ -10,9 +10,10 @@ pactl load-module module-loopback source=1 sink=Combined_Output # source number 
 
 pactl load-module module-loopback source=3 sink=Combined_Output
 
-pactl load-module module-loopback source=3 sink=alsa_output.pci-0000_02_04.0.analog-stereo # sink is the name of speakers from "pactl list sinks".
+pactl load-module module-loopback source=3 sink=alsa_output.usb-Razer_Razer_Kraken_X_USB_00000000-00.analog-stereo # sink is the name of speakers from "pactl list sinks".
 
 #make sure to route every audio playback to Recorded_Sink
+#make my default Input Device Combined_Output
 
 elif [[ $1 == "stop" ]]
 then
