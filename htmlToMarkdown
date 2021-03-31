@@ -1,0 +1,1 @@
+pandoc -s $1 -t gfm -o $2.md
