@@ -1,0 +1,1 @@
+cat /dev/urandom | ffplay -fs -f rawvideo -video_size 1920x1080 -framerate 60 -i -

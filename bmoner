@@ -1,0 +1,1 @@
+sudo bmon -a -r 0.1 -R 0.1 -s 0.1 -Ub

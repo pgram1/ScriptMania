@@ -1,0 +1,36 @@
+#!/bin/bash
+
+#hide shell cursor while script is being executed
+echo -ne "\e[?25l";
+
+#upper limit of page ids to go through
+limit=1000;
+
+for ((m=0; m<=$limit; m++)); do
+{
+	#create url of iteration
+	url="https://york.citycollege.eu/frontend/members_profile.php?m=$m&chlang=GR_EN";
+	#curl the url and then pick the name out of the page, if it exists
+	name=$(curl -s "$url" | grep -Po '<h1 class="article\_title">\K[^<]*');
+	#log data to a RAM based file
+	echo "$url" : "$name" >> /dev/shm/profiles.txt;
+}&
+#the procedure above is supposed to be parallel, but this would also
+#mean that way too many calls would occur.
+#therefore throttling calls.
+sleep 0.1;
+#progress of scraping
+echo -ne "Scraping: "$((($m+1)*100/$limit))"% ($m/$limit)\r";
+done
+echo -ne "\n\nWait, filtering data...\r";
+#waiting for processes above to finish
+wait;
+#only keep pages that have valid user profiles (a name exists)
+grep -Po '^[^:]+:.*[^ ]$' /dev/shm/profiles.txt > filtered.txt;
+#sort by page id number
+sort -u -t= -k2 -n filtered.txt > filtered-sorted.txt;
+#show shell cursor again
+echo -ne "\e[?25h";
+#cleanup
+rm /dev/shm/profiles.txt filtered.txt;
+echo -ne "\n\nDone.\n\n";

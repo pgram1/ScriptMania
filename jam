@@ -1,0 +1,2 @@
+mpv --volume=130 --no-video --no-terminal "https://www.liveatc.net/play/rjoo1.pls"&
+mpv --volume=30 --no-video --no-terminal "https://somafm.com/vaporwaves32.pls"&

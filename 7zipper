@@ -1,0 +1,1 @@
+7z a -t7z -mx=9 -myx=9 -ms=on -mf=on -mhc=on -m0=LZMA -mmt=on -mmtf=on -ma=1 -md1536m -mmf=bt4 $1 $2
