@@ -1,0 +1,7 @@
+#!/bin/bash
+timestamp=$(date "+%Y-%m-%dT%H%M-")
+tar -H posix -cvf $timestamp$1.tar $1
+wait
+sync
+wait
+gpg --compress-algo none -o $timestamp$1.tar.gpg -c $timestamp$1.tar
