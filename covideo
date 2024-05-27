@@ -1,1 +1,0 @@
-ffmpeg -i "$1" -c:a aac -c:v h264_nvenc "$1-optimized.mp4"
