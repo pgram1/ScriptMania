@@ -1,0 +1,7 @@
+#!/bin/bash
+echo "Running..."
+while true
+do
+    pacmd set-source-volume bluez_source.84_AC_60_90_2F_12.handsfree_head_unit 100000
+    sleep 0.25
+done
