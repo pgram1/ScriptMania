@@ -1,0 +1,3 @@
+#!/bin/bash
+
+jq -r ".comments[] | [.author,.text,.time_text,.like_count,.id] | @csv" $1

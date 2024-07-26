@@ -1,0 +1,20 @@
+#!/bin/bash
+#generic media extractor using yt-dlp - extract source links
+Url=$1
+Refer=$2
+echo "Loading format list..."&
+yt-dlp -v -N 64 -ci --cookies "cookies.txt" --user-agent "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" --referer "$Refer" -F "$Url"
+echo -e "What quality?(video+audio or single stream)\n(for some streams you will have to use a generic yt-dlp quality abbreviation):"
+read -r Qual
+Sources=()
+while IFS= read -r line; do
+	Sources+=( "$line" )
+done < <( yt-dlp -v -N 64 -ci --cookies "cookies.txt" -g --referer "$Refer" -f "$Qual" "$Url" )
+for SourceLine in "${Sources[@]}"; do
+	echo -e "\n---------------------------\n"
+	echo -e "\n"
+	echo "$SourceLine"
+	echo -e "\n"
+	echo "mpv.exe \"$SourceLine\" --referrer=\"$Refer\" --user-agent=\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36\" --cookies --cookies-file=\"cookies.txt\""
+	echo -e "\n---------------------------\n"
+done

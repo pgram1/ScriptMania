@@ -1,0 +1,7 @@
+#!/bin/bash
+
+if [ ! -d processed ]; then
+mkdir -p processed;
+else
+echo folder exists;
+fi && for f in *; do ffmpeg -i "$f" "processed/$f"; done

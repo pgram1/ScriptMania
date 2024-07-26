@@ -1,0 +1,1 @@
+ffmpeg -hwaccel cuda -i "$1" -filter_complex "[0:a]showcqt=s=1280x720:r=50:count=30:attack=0.07[v]" -map "[v]" -map 0:a -c:v hevc_nvenc -c:a copy "$1-vid.mkv"

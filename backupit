@@ -1,0 +1,7 @@
+#!/bin/bash
+timestamp=$(date "+%Y-%m-%dT%H%M-")
+zip -r0 $timestamp$1 $1
+wait
+sync
+wait
+gpg --compress-algo none -o $timestamp$1.zip.gpg -c $timestamp$1.zip

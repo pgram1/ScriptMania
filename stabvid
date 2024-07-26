@@ -1,0 +1,2 @@
+ffmpeg -i "$1" -vf vidstabdetect=shakiness=10:accuracy=15 -f null -;
+ffmpeg -hwaccel cuda -i "$1" -c:v hevc_nvenc -vf vidstabtransform -c:a copy "$1-stabilized.mkv";

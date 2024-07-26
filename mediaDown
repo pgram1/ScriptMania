@@ -1,0 +1,9 @@
+#!/bin/bash
+#generic media downloader using yt-dlp
+Url=$1
+echo "Loading format list..."&
+yt-dlp -v -N 64 -ci --cookies "cookies.txt" --user-agent "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" -F "$Url"
+echo "What quality?(video+audio or single stream):"
+read -r Qual
+yt-dlp -v -N 64 -ci --cookies "cookies.txt" --user-agent "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" -f "$Qual" "$Url"
+wait

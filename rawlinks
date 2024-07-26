@@ -1,0 +1,24 @@
+#!/bin/bash
+
+link="$1";
+
+echo "
+Saving provided link
+
+--------------------
+\"$link\"
+--------------------
+
+and all sublinks (up to 1 directory level down)
+";
+
+
+wget --spider -r -N -l 1 --no-remove-listing -pnpH -U 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.8.1.6) Gecko/20070802 SeaMonkey/1.1.4' -e robots=off "$link" -o output.txt;
+
+#grep -Eo "https?://\S+?." output.txt > processedOutput.txt;
+
+grep -Eo "[-a-zA-Z0-9@:%._\+~#=]+\:[\/]*[-a-zA-Z0-9@:%._\+~#=]+\.[a-zA-Z0-9()]+\b[-a-zA-Z0-9()@:%_\+.~#?&\/=\,\;]*" output.txt > processedOutput.txt;
+
+rm output.txt;
+awk '!a[$0]++' processedOutput.txt > processedOutputND.txt;
+rm processedOutput.txt;
