@@ -1,0 +1,6 @@
+#!/bin/bash
+
+folder1=$1
+folder2=$2
+
+rclone --progress --transfers 100 --checkers 100 --fast-list sync "$folder1" "$folder2"

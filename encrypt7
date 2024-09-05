@@ -1,1 +1,1 @@
-7za a -mhe=on -p -t7z -mx=0 $1 $2
+7z a -mhe=on -p -t7z -mx=0 $1 "$@"
