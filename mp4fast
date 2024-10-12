@@ -2,4 +2,4 @@
 
 input=$1
 
-ffmpeg -i "$input" -c:v h264_nvenc -c:a libmp3lame -vf format=yuv420p "$input-converted.mp4"
+ffmpeg -i "$input" -c:v h264_nvenc -c:a aac -vf format=yuv420p "$input-fastconverted.mp4"

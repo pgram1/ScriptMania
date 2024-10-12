@@ -1,0 +1,5 @@
+#!/bin/bash
+
+input=$1
+
+ffmpeg -i "$input" -c:v libopenh264 -c:a aac -vf format=yuv420p "$input-converted.mp4"
