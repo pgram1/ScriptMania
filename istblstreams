@@ -1,0 +1,15 @@
+echo "" > streams.txt
+
+for ((i=1000; i<=3000; i++))
+do
+	incr=$i;
+	url="https://hls.ibb.gov.tr/tkm1/hls/$incr.stream/chunklist.m3u8";
+	
+	
+	SIZE=$(curl -s -I -k -X GET "$url" | grep -i content-length: |awk '{print $2}');
+#echo $SIZE
+if [[ $SIZE > 150 ]]; then 
+  echo "There is a livestream at $url";
+echo "$url" >> streams.txt
+fi
+done
