@@ -1,6 +1,6 @@
 echo "" > streams.txt
 
-for ((i=1000; i<=3000; i++))
+for ((i=0; i<=1000; i++))
 do
 	incr=$i;
 	url="https://hls.ibb.gov.tr/tkm1/hls/$incr.stream/chunklist.m3u8";
