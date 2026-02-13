@@ -1,1 +1,0 @@
-customnv flatpak run com.brave.Browser --ozone-platform=x11 --disable-gpu-vsync
