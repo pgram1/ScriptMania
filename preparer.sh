@@ -40,19 +40,14 @@ elif [[ "$choice" == "external:"* ]]; then
     FILTER_ARGS=("-vf" "subtitles='$ESCAPED_PATH'")
 fi
 
-# 5. Run Encode
+# 5. Run Encode — minimal settings + force stereo audio output
 echo "--- Encoding: $OUTPUT ---"
 
-# Optimized for Web Playback (Stable Bitrate & yuv420p)
 ffmpeg -i "$INPUT" \
     -c:v h264_nvenc \
-    -preset slow \
-    -profile:v high \
-    -level 4.1 \
     -pix_fmt yuv420p \
-    -b:v 3M -maxrate 4M -bufsize 8M \
     "${FILTER_ARGS[@]}" \
     -c:a aac \
-    -b:a 128k \
+    -ac 2 \
     -movflags +faststart \
     -y "$OUTPUT"
