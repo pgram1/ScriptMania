@@ -1,0 +1,34 @@
+#!/bin/bash
+set -e
+threshold=3
+first=1
+group_files=()
+prev_time=0
+
+while read -r time file; do
+    if [ $first -eq 1 ]; then
+        group_files=("$file")
+        prev_time=$time
+        first=0
+    else
+        diff=$(echo "$time - $prev_time" | bc)
+        if (( $(echo "$diff <= $threshold" | bc -l) )); then
+            group_files+=("$file")
+            prev_time=$time
+        else
+            if [ ${#group_files[@]} -ge 2 ]; then
+                last="${group_files[-1]}"
+                output="${last%.*}_merged.jpg"
+                enfuse -o "$output" "${group_files[@]}"
+            fi
+            group_files=("$file")
+            prev_time=$time
+        fi
+    fi
+done < <(find . -maxdepth 1 -iname "*.jpg" -printf "%T@ %p\n" | sort -n)
+
+if [ ${#group_files[@]} -ge 2 ]; then
+    last="${group_files[-1]}"
+    output="${last%.*}_merged.jpg"
+    enfuse -o "$output" "${group_files[@]}"
+fi
