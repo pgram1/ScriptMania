@@ -25,28 +25,39 @@ external_subs=$(find "$INPUT_DIR" -maxdepth 1 \( -iname "*.srt" -o -iname "*.ass
 # 4. User Selection
 choice=$(echo -e "none\n$internal_subs\n$external_subs" | fzf --header="Select Subtitle" --reverse)
 
-FILTER_ARGS=()
-
+SUB_FILTER=""
 if [[ "$choice" == *"(internal)"* ]]; then
     INDEX=$(echo "$choice" | cut -d' ' -f1)
     echo "Extracting stream #$INDEX..."
     ffmpeg -y -i "$INPUT" -map 0:"$INDEX" "$TEMP_SUB" -v quiet
-    FILTER_ARGS=("-vf" "subtitles=$TEMP_SUB")
-
+    SUB_FILTER="subtitles=$TEMP_SUB"
 elif [[ "$choice" == "external:"* ]]; then
     SUB_NAME=$(echo "$choice" | cut -d':' -f2-)
     FULL_PATH="$INPUT_DIR/$SUB_NAME"
     ESCAPED_PATH=$(echo "$FULL_PATH" | sed 's/:/\\:/g')
-    FILTER_ARGS=("-vf" "subtitles='$ESCAPED_PATH'")
+    SUB_FILTER="subtitles='$ESCAPED_PATH'"
 fi
 
-# 5. Run Encode — minimal settings + force stereo audio output
-echo "--- Encoding: $OUTPUT ---"
+# Build video filter chain: subtitles (if any) + conditional scale to max 720p
+VF=""
+if [[ -n "$SUB_FILTER" ]]; then
+    VF="$SUB_FILTER,"
+fi
+# Downscale only if height > 720 → width=1280 (proportional height ≤720), else keep original
+# -2 forces even dimensions for yuv420p + h264 compatibility
+VF="${VF}scale='if(gt(ih,720),1280,iw)':'if(gt(ih,720),-2,ih)':force_original_aspect_ratio=decrease"
+
+echo "--- Encoding (NVIDIA NVENC) with conditional 720p downscale: $OUTPUT ---"
 
 ffmpeg -i "$INPUT" \
+    -vf "$VF" \
     -c:v h264_nvenc \
+    -preset p7 \
+    -tune hq \
+    -rc vbr \
+    -cq 19 \
+    -b:v 0 \
     -pix_fmt yuv420p \
-    "${FILTER_ARGS[@]}" \
     -c:a aac \
     -ac 2 \
     -movflags +faststart \
