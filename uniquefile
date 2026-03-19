@@ -1,0 +1,103 @@
+#!/usr/bin/env python3
+"""
+Rename all files (not folders) in a directory tree using UUIDs.
+
+Usage:
+    python rename_with_uuid.py /path/to/folder
+
+Features:
+- Preserves original file extensions
+- Only renames files (skips directories)
+- Handles name collisions automatically (UUIDv4)
+- Dry-run mode by default (shows what would happen)
+- Can be made dangerous by removing dry-run protection
+"""
+
+import sys
+import uuid
+from pathlib import Path
+
+
+def rename_files_with_uuid(
+    root_dir: Path,
+    dry_run: bool = True,
+    quiet: bool = False
+) -> None:
+    """
+    Recursively rename all files under root_dir with UUID-based names.
+    Keeps the original file extension.
+    """
+    if not root_dir.is_dir():
+        print(f"Error: {root_dir} is not a directory", file=sys.stderr)
+        sys.exit(1)
+
+    renamed_count = 0
+    skipped_count = 0
+
+    # We collect all files first to avoid issues while walking
+    all_files = []
+
+    for item in root_dir.rglob("*"):
+        if item.is_file():
+            all_files.append(item)
+
+    print(f"Found {len(all_files)} files to process.")
+    print("─" * 60)
+
+    for old_path in all_files:
+        # Skip if already looks like a UUID-named file (optional safety)
+        # stem = old_path.stem
+        # if len(stem) == 36 and "-" in stem:  # rough UUID check
+        #     if not quiet:
+        #         print(f"  skip  {old_path.name:.<60} (looks like UUID)")
+        #     skipped_count += 1
+        #     continue
+
+        new_stem = str(uuid.uuid4())
+        new_name = new_stem + old_path.suffix
+        new_path = old_path.with_name(new_name)
+
+        if dry_run:
+            print(f"  would rename: {old_path.name:.<50} → {new_name}")
+        else:
+            try:
+                old_path.rename(new_path)
+                if not quiet:
+                    print(f"  renamed: {old_path.name:.<50} → {new_name}")
+                renamed_count += 1
+            except Exception as e:
+                print(f"  FAILED: {old_path.name} → {new_name}   ({e})", file=sys.stderr)
+
+    print("─" * 60)
+    print(f"Summary:")
+    print(f"  Files processed : {len(all_files)}")
+    print(f"  Renamed         : {renamed_count}")
+    print(f"  Skipped         : {skipped_count}")
+    if dry_run:
+        print("\nDRY RUN — nothing was actually renamed!")
+        print("Remove dry_run=True to perform real renaming.\n")
+
+
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: python rename_with_uuid.py <directory_path> [--real]")
+        print("  --real    actually rename files (default is dry-run)")
+        sys.exit(1)
+
+    path = Path(sys.argv[1]).resolve()
+
+    real_rename = False
+    if len(sys.argv) >= 3 and sys.argv[2] in ("--real", "-real", "--force"):
+        real_rename = True
+
+    print(f"Target directory: {path}\n")
+
+    rename_files_with_uuid(
+        root_dir=path,
+        dry_run=not real_rename,
+        quiet=False
+    )
+
+
+if __name__ == "__main__":
+    main()
