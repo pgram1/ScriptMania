@@ -19,16 +19,24 @@ while read -r time file; do
             if [ ${#group_files[@]} -ge 2 ]; then
                 last="${group_files[-1]}"
                 output="${last%.*}_merged.jpg"
-                enfuse --hard-mask -o "$output" "${group_files[@]}"
+                enfuse --hard-mask -o "$output" --compression=100 "${group_files[@]}"
             fi
             group_files=("$file")
             prev_time=$time
         fi
     fi
-done < <(find . -maxdepth 1 -iname "*.jpg" -printf "%T@ %p\n" | sort -n)
+done < <(
+    if [ $# -gt 0 ]; then
+        for f in "$@"; do
+            find "$f" -maxdepth 0 -printf "%T@ %p\n" 2>/dev/null
+        done | sort -n
+    else
+        find . -maxdepth 1 -iname "*.jpg" -printf "%T@ %p\n" | sort -n
+    fi
+)
 
 if [ ${#group_files[@]} -ge 2 ]; then
     last="${group_files[-1]}"
     output="${last%.*}_merged.jpg"
-    enfuse --hard-mask -o "$output" "${group_files[@]}"
+    enfuse --hard-mask -o "$output" --compression=100 "${group_files[@]}"
 fi
