@@ -32,9 +32,10 @@ elif [[ "$choice" == "external:"* ]]; then
     SUB_FILTER="subtitles='$ESCAPED_PATH'"
 fi
 
-VF="null"
+# Apply proportional 720p scaling, chaining subtitles if they exist
+VF="scale=-2:720"
 if [[ -n "$SUB_FILTER" ]]; then
-    VF="$SUB_FILTER"
+    VF="scale=-2:720,$SUB_FILTER"
 fi
 
 echo "--- Encoding (NVIDIA NVENC): $OUTPUT ---"
