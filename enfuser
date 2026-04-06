@@ -1,42 +1,82 @@
 #!/bin/bash
-set -e
-threshold=3
-first=1
-group_files=()
-prev_time=0
+# set -e is removed so that one failing group doesn't kill the whole process
+# We handle errors manually for "graceful" behavior.
 
-while read -r time file; do
-    if [ $first -eq 1 ]; then
-        group_files=("$file")
-        prev_time=$time
-        first=0
-    else
-        diff=$(echo "$time - $prev_time" | bc)
-        if (( $(echo "$diff <= $threshold" | bc -l) )); then
-            group_files+=("$file")
-            prev_time=$time
+MIN_FILES=2
+
+echo "Enfuser - High Quality (100% JPG) Processing"
+echo "====================================================="
+
+shopt -s nullglob
+# Including common RAW and image formats
+extensions="*.dng *.jpg *.jpeg *.png *.tiff *.tif *.cr2 *.nef *.arw *.rw2 *.orf *.raf"
+
+declare -A groups
+
+for pattern in $extensions; do
+    for file in $pattern; do
+        base_no_ext="${file%.*}"
+        
+        # Suffix matching: Only match _N or -N where N is 1-2 digits.
+        # This prevents breaking long timestamps like _120927630.
+        if [[ $base_no_ext =~ ^(.*)[_-]([0-9]{1,2})$ ]]; then
+            base="${BASH_REMATCH[1]}"
         else
-            if [ ${#group_files[@]} -ge 2 ]; then
-                last="${group_files[-1]}"
-                output="${last%.*}_merged.jpg"
-                enfuse --hard-mask -o "$output" --compression=100 "${group_files[@]}"
-            fi
-            group_files=("$file")
-            prev_time=$time
+            base="$base_no_ext"
         fi
-    fi
-done < <(
-    if [ $# -gt 0 ]; then
-        for f in "$@"; do
-            find "$f" -maxdepth 0 -printf "%T@ %p\n" 2>/dev/null
-        done | sort -n
-    else
-        find . -maxdepth 1 -iname "*.jpg" -printf "%T@ %p\n" | sort -n
-    fi
-)
+        groups["$base"]+="$file"$'\n'
+    done
+done
 
-if [ ${#group_files[@]} -ge 2 ]; then
-    last="${group_files[-1]}"
-    output="${last%.*}_merged.jpg"
-    enfuse --hard-mask -o "$output" --compression=100 "${group_files[@]}"
-fi
+merged_count=0
+single_count=0
+error_count=0
+
+for base in "${!groups[@]}"; do
+    group_files=()
+    while IFS= read -r line; do
+        [[ -n "$line" ]] && group_files+=("$line")
+    done <<< "${groups[$base]}"
+    
+    # Sort files naturally
+    IFS=$'\n' sorted_files=($(printf '%s\n' "${group_files[@]}" | sort -V))
+    count=${#sorted_files[@]}
+    output="${base}_merged.jpg"
+
+    # CASE 1: SINGLE FILES (Non-groups)
+    if [ "$count" -lt "$MIN_FILES" ]; then
+        input_file="${sorted_files[0]}"
+        echo "Processing single file: $input_file"
+        
+        # Convert to 100% quality JPG
+        if command -v magick >/dev/null 2>&1; then
+            magick "$input_file" -quality 100 "$output" && echo "  → Saved 100% Quality: $output"
+        elif command -v convert >/dev/null 2>&1; then
+            convert "$input_file" -quality 100 "$output" && echo "  → Saved 100% Quality: $output"
+        else
+            echo "  ERROR: ImageMagick (magick/convert) not found. Cannot convert single files." >&2
+            error_count=$((error_count + 1))
+            continue
+        fi
+        single_count=$((single_count + 1))
+        continue
+    fi
+    
+    # CASE 2: GROUPS (Merging)
+    echo "Merging group '$base' ($count files)..."
+    
+    # Enfuse: --compression=100 sets JPEG quality to 100
+    if enfuse -o "$output" --compression=100 "${sorted_files[@]}"; then
+        echo "  → Merged 100% Quality: $output"
+        merged_count=$((merged_count + 1))
+    else
+        echo "  FAILED: Enfuse crashed/failed on '$base'. Check if image dimensions match." >&2
+        error_count=$((error_count + 1))
+    fi
+done
+
+echo "====================================================="
+echo "Finished!"
+echo "Successfully merged: $merged_count groups"
+echo "Successfully processed: $single_count single files"
+[[ $error_count -gt 0 ]] && echo "Errors encountered: $error_count"
