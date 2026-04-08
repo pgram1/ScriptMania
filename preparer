@@ -50,18 +50,14 @@ ffmpeg -f yuv4mpegpipe -i - \
     -map 0:v:0 \
     -map 1:a:0? \
     -c:v libvpx-vp9 \
-    -crf 20 \
-    -row-mt 1 \
+    -crf 20 -b:v 0 \
+    -deadline realtime -cpu-used 8 \
+    -row-mt 1 -tile-columns 2 \
     -pix_fmt yuv420p \
     -color_primaries bt709 \
     -color_trc bt709 \
     -colorspace bt709 \
-    -map_metadata -1 \
-    -map_chapters -1 \
-    -bitexact \
-    -c:a libopus \
-    -b:a 192k \
-    -ac 2 \
+    -map_metadata -1 -map_chapters -1 -bitexact \
+    -c:a libopus -b:a 192k -ac 2 \
     -y "$OUTPUT"
-
-
+    
