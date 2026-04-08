@@ -1,11 +1,11 @@
 #!/bin/bash
 
-[[ -z "$1" ]] && { echo "Usage: ./preparer.sh <file>"; exit 1; }
+[[ -z "$1" ]] && { echo "need a file"; exit 1; }
 
 INPUT="$1"
 INPUT_DIR=$(dirname "$(realpath "$INPUT")")
 FILENAME=$(basename "${INPUT%.*}")
-OUTPUT="${INPUT_DIR}/${FILENAME}_web.mp4"
+OUTPUT="${INPUT_DIR}/${FILENAME}_web.webm"
 TEMP_SUB="/tmp/temp_sub_${RANDOM}.srt"
 
 trap "rm -f \"$TEMP_SUB\"" EXIT
@@ -32,24 +32,36 @@ elif [[ "$choice" == "external:"* ]]; then
     SUB_FILTER="subtitles='$ESCAPED_PATH'"
 fi
 
-# Apply proportional 720p scaling, chaining subtitles if they exist
-VF="scale=-2:720"
+VF="zscale=t=709:p=709:m=709,scale=-2:720,format=yuv420p"
 if [[ -n "$SUB_FILTER" ]]; then
-    VF="scale=-2:720,$SUB_FILTER"
+    VF="$VF,$SUB_FILTER"
 fi
 
-echo "--- Encoding (NVIDIA NVENC): $OUTPUT ---"
+
 
 ffmpeg -i "$INPUT" \
     -vf "$VF" \
-    -c:v h264_nvenc \
-    -preset p7 \
-    -tune hq \
-    -rc vbr \
-    -cq 19 \
-    -b:v 0 \
+    -sn \
+    -an \
+    -f yuv4mpegpipe - \
+| \
+ffmpeg -f yuv4mpegpipe -i - \
+    -i "$INPUT" \
+    -map 0:v:0 \
+    -map 1:a:0? \
+    -c:v libvpx-vp9 \
+    -crf 20 \
+    -row-mt 1 \
     -pix_fmt yuv420p \
-    -c:a aac \
+    -color_primaries bt709 \
+    -color_trc bt709 \
+    -colorspace bt709 \
+    -map_metadata -1 \
+    -map_chapters -1 \
+    -bitexact \
+    -c:a libopus \
+    -b:a 192k \
     -ac 2 \
-    -movflags +faststart \
     -y "$OUTPUT"
+
+

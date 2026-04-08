@@ -2,5 +2,5 @@
 for f in "$@"; do
   [[ -f "$f" ]] || continue
   base="${f%.*}"
-  ffmpeg -i "$f" -c:v h264_nvenc "${base}-opt.mp4"
+  ffmpeg -i "$f" -c:v hevc_nvenc "${base}-opt.mp4"
 done
