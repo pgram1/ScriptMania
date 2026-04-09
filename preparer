@@ -124,7 +124,7 @@ if [[ -n "$SUB_FILTER" ]]; then
     echo "-> Level 2: Subtitles will be burned into video"
 fi
 
-echo "-> Level 3: Encoding with NVENC hardware encoder"
+echo "-> Level 3: Encoding with NVENC hardware encoder (faststart enabled)"
 echo "Starting pipeline..."
 
 # ==============================================
@@ -154,6 +154,7 @@ ffmpeg -hide_banner -f yuv4mpegpipe -i pipe:0 \
     -pix_fmt yuv420p \
     -color_primaries bt709 -color_trc bt709 -colorspace bt709 \
     -map_metadata -1 -map_chapters -1 -bitexact \
+    -movflags +faststart \
     -c:a aac -b:a 192k -ac 2 \
     -y "$OUTPUT"
 
