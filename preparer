@@ -1,18 +1,20 @@
 #!/bin/bash
 [[ -z "$1" ]] && { echo "need a file"; exit 1; }
+
 INPUT="$1"
 INPUT_DIR=$(dirname "$(realpath "$INPUT")")
 FILENAME=$(basename "${INPUT%.*}")
 OUTPUT="${INPUT_DIR}/${FILENAME}_web.mp4"
 TEMP_SUB="/tmp/temp_sub_${RANDOM}.srt"
+trap 'rm -f "$TEMP_SUB"' EXIT
 
-trap "rm -f \"$TEMP_SUB\"" EXIT
-
-# ==========================================
-# 1. MAGIC CONTEXT & AUTO-DISCOVERY ENGINE
-# ==========================================
+# ==============================================
+# 1. MAGIC CONTEXT EXTRACTION
+# ==============================================
 echo "--- Probing Stream Metadata ---"
-PROBE_DATA=$(ffprobe -v error -select_streams v:0 -show_entries stream=color_transfer,color_primaries,color_space -of default=noprint_wrappers=1:nokey=0 "$INPUT")
+PROBE_DATA=$(ffprobe -v error -select_streams v:0 \
+    -show_entries stream=color_transfer,color_primaries,color_space \
+    -of default=noprint_wrappers=1:nokey=0 "$INPUT")
 
 color_transfer=""
 color_primaries=""
@@ -20,8 +22,8 @@ color_space=""
 
 while IFS='=' read -r key value; do
     if [[ -n "$key" && -n "$value" && "$value" != "unknown" ]]; then
-        value="${value%$'\r'}"      
-        printf -v "$key" "%s" "$value" 
+        value="${value%$'\r'}"
+        printf -v "$key" "%s" "$value"
     fi
 done <<< "$PROBE_DATA"
 
@@ -30,127 +32,129 @@ if [[ "$color_transfer" == *"smpte2084"* || "$color_transfer" == *"arib-std-b67"
     IS_HDR=1
 fi
 
-# Auto-Discover Available NVIDIA Hardware Scalers in your FFmpeg build
-HAS_SCALE_CUDA=$(ffmpeg -hide_banner -filters 2>/dev/null | grep -c "scale_cuda")
-HAS_SCALE_NPP=$(ffmpeg -hide_banner -filters 2>/dev/null | grep -c "scale_npp")
-
-if [[ $HAS_SCALE_CUDA -gt 0 ]]; then
-    SCALE_ENGINE="scale_cuda"
-elif [[ $HAS_SCALE_NPP -gt 0 ]]; then
-    SCALE_ENGINE="scale_npp"
+# Determine methods
+DECODER_METHOD="NVDEC (CUDA hardware decoding)"
+SCALER_METHOD="CPU (software scaling)"
+if [[ $IS_HDR -eq 1 ]]; then
+    TONEMAP_METHOD="OpenCL hardware tonemapping"
 else
-    SCALE_ENGINE="Software (CPU Fallback)"
+    TONEMAP_METHOD="none (SDR passthrough)"
 fi
+ENCODER_METHOD="NVENC (CUDA hardware encoding)"
 
 echo "========================================================="
-echo " PIPELINE ROUTING (SMART HW ACCELERATED)"
+echo " PIPELINE ROUTING"
 echo "========================================================="
-echo " File:       $FILENAME"
-echo " Transfer:   ${color_transfer:-<standard>}"
-echo " Primaries:  ${color_primaries:-<standard>}"
-echo " Color Spc:  ${color_space:-<standard>}"
-echo " HDR Engine: $( [[ $IS_HDR -eq 1 ]] && echo "ENABLED (OpenCL HW Tonemapping)" || echo "BYPASSED (SDR stream)" )"
-echo " HW Decoder: NVDEC (cuda)"
-echo " HW Scaler:  $SCALE_ENGINE"
-echo " HW Encoder: NVENC (cuda)"
+echo " File: $FILENAME"
+echo " Transfer: ${color_transfer:-<standard>}"
+echo " Primaries: ${color_primaries:-<standard>}"
+echo " Color Spc: ${color_space:-<standard>}"
+echo " HDR Engine: $([[ $IS_HDR -eq 1 ]] && echo "ENABLED" || echo "BYPASSED")"
+echo " Decoder: $DECODER_METHOD"
+echo " Scaler:  $SCALER_METHOD"
+echo " Tonemap: $TONEMAP_METHOD"
+echo " Encoder: $ENCODER_METHOD"
 echo "========================================================="
 
-# ==========================================
+# ==============================================
 # 2. SUBTITLE SELECTION
-# ==========================================
+# ==============================================
 internal_subs=$(ffprobe -v error -select_streams s -show_entries stream=index:stream_tags=language,title -of csv=p=0 "$INPUT" | \
- awk -F, '{print $1 " | " $2 " | " $3 " (internal)"}')
+    awk -F, '{print $1 " | " $2 " | " $3 " (internal)"}')
 external_subs=$(find "$INPUT_DIR" -maxdepth 1 \( -iname "*.srt" -o -iname "*.ass" \) -printf "external:%f\n")
 
 choice=$(echo -e "none\n$internal_subs\n$external_subs" | fzf --header="Select Subtitle" --reverse)
 
 SUB_FILTER=""
 if [[ "$choice" == *"(internal)"* ]]; then
- INDEX=$(echo "$choice" | cut -d' ' -f1)
- echo "Extracting stream #$INDEX..."
- ffmpeg -y -i "$INPUT" -map 0:"$INDEX" "$TEMP_SUB" -v quiet
- SUB_FILTER="subtitles=$TEMP_SUB"
-elif [[ "$choice" == "external:"* ]]; then
- SUB_NAME=$(echo "$choice" | cut -d':' -f2-)
- FULL_PATH="$INPUT_DIR/$SUB_NAME"
- ESCAPED_PATH=$(echo "$FULL_PATH" | sed 's/:/\\:/g')
- SUB_FILTER="subtitles='$ESCAPED_PATH'"
+    INDEX=$(echo "$choice" | cut -d' ' -f1)
+    echo "Extracting internal subtitle stream #$INDEX..."
+    ffmpeg -y -i "$INPUT" -map 0:"$INDEX" "$TEMP_SUB" -v quiet
+    SUB_FILTER="subtitles=$TEMP_SUB"
+    echo "-> Will burn internal subtitles (stream #$INDEX)"
+elif [[ "$choice" == external:* ]]; then
+    SUB_NAME=$(echo "$choice" | cut -d':' -f2-)
+    FULL_PATH="${INPUT_DIR}/${SUB_NAME}"
+    ESCAPED_PATH=$(echo "$FULL_PATH" | sed 's/:/\\:/g')
+    SUB_FILTER="subtitles='$ESCAPED_PATH'"
+    echo "-> Will burn external subtitles: $SUB_NAME"
+else
+    echo "-> No subtitles selected"
 fi
 
-# ==========================================
+# ==============================================
 # 3. DYNAMIC FILTERGRAPH CONSTRUCTION
-# ==========================================
-
+# ==============================================
 if [[ $IS_HDR -eq 1 ]]; then
-    HW_FMT="p010le"
     PIPE_FMT="yuv420p10le"
+    echo "-> HDR detected: using 10-bit pipeline"
 else
-    HW_FMT="nv12"
     PIPE_FMT="yuv420p"
+    echo "-> SDR content: using 8-bit pipeline"
 fi
 
-# LEVEL 1: Dynamic Hardware/Software Scale
-if [[ "$SCALE_ENGINE" == "scale_cuda" ]]; then
-    L1_HW_ARGS="-init_hw_device cuda=cu -filter_hw_device cu -hwaccel cuda -hwaccel_output_format cuda"
-    VF_SCALE="hwupload,scale_cuda=w=-2:h=1080,hwdownload,format=${HW_FMT},scale,format=${PIPE_FMT}"
-elif [[ "$SCALE_ENGINE" == "scale_npp" ]]; then
-    L1_HW_ARGS="-init_hw_device cuda=cu -filter_hw_device cu -hwaccel cuda -hwaccel_output_format cuda"
-    VF_SCALE="hwupload,scale_npp=w=-2:h=1080,hwdownload,format=${HW_FMT},scale,format=${PIPE_FMT}"
-else
-    # FALLBACK: HW Decode via NVDEC, but downloads frame to CPU for software scaling safely.
-    L1_HW_ARGS="-hwaccel cuda"
-    VF_SCALE="scale=-2:1080,format=${PIPE_FMT}"
-fi
+# LEVEL 1: Hardware Decode (NVDEC) + Software Scale
+L1_HW_ARGS="-hwaccel cuda"
+VF_SCALE="scale=-2:1080,format=$PIPE_FMT"
+echo "-> Level 1: Hardware decoding (NVDEC) + CPU scaling to 1080p"
 
 # LEVEL 2: Dynamic Tonemapping & State Reconstruction
 SET_PARAMS=""
-[[ -n "$color_primaries" ]] && SET_PARAMS+="color_primaries=${color_primaries}:"
-[[ -n "$color_transfer" ]]  && SET_PARAMS+="color_trc=${color_transfer}:"
-[[ -n "$color_space" ]]     && SET_PARAMS+="colorspace=${color_space}:"
-SET_PARAMS=${SET_PARAMS%:} 
+[[ -n "$color_primaries" ]] && SET_PARAMS+="color_primaries=$color_primaries:"
+[[ -n "$color_transfer" ]] && SET_PARAMS+="color_trc=$color_transfer:"
+[[ -n "$color_space" ]]     && SET_PARAMS+="colorspace=$color_space:"
+SET_PARAMS="${SET_PARAMS%:}"  # Remove trailing colon
 
 SETPARAMS_FILTER=""
-[[ -n "$SET_PARAMS" ]] && SETPARAMS_FILTER="setparams=${SET_PARAMS},"
+[[ -n "$SET_PARAMS" ]] && SETPARAMS_FILTER="setparams=$SET_PARAMS,"
 
 if [[ $IS_HDR -eq 1 ]]; then
-    VF_TONEMAP="${SETPARAMS_FILTER}format=${PIPE_FMT},hwupload,tonemap_opencl=tonemap=hable:desat=0:r=tv:p=bt709:t=bt709:m=bt709:format=nv12,hwdownload,format=nv12,scale,format=yuv420p"
+    # Reconstruct metadata -> Upload to GPU -> Tonemap -> Download -> Prepare for final pipe
+    VF_TONEMAP="${SETPARAMS_FILTER}format=$PIPE_FMT,hwupload,tonemap_opencl=tonemap=hable:desat=0:r=tv:p=bt709:t=bt709:m=bt709:format=nv12,hwdownload,format=nv12,scale,format=yuv420p"
+    echo "-> Level 2: Applying OpenCL HDR to SDR tonemapping"
 else
-    VF_TONEMAP="${SETPARAMS_FILTER}format=${PIPE_FMT}"
+    # SDR Passthrough: Just tag the metadata and format correctly
+    VF_TONEMAP="${SETPARAMS_FILTER}format=$PIPE_FMT"
+    echo "-> Level 2: SDR passthrough (no tonemapping needed)"
 fi
 
 # Burn subtitles on the final SDR frames
 if [[ -n "$SUB_FILTER" ]]; then
-    VF_TONEMAP="$VF_TONEMAP,$SUB_FILTER"
+    VF_TONEMAP="${VF_TONEMAP},${SUB_FILTER}"
+    echo "-> Level 2: Subtitles will be burned into video"
 fi
 
-# ==========================================
+echo "-> Level 3: Encoding with NVENC hardware encoder"
+echo "Starting pipeline..."
+
+# ==============================================
 # 4. 3-LEVEL FFMPEG PIPELINE
-# ==========================================
+# ==============================================
 MBUFFER_ARG="-m 10G"
 
 mbuffer -i "$INPUT" $MBUFFER_ARG | \
 ffmpeg -hide_banner $L1_HW_ARGS -i pipe:0 \
- -vf "$VF_SCALE" \
- -sn -an -f yuv4mpegpipe -strict -1 - \
-| \
+    -vf "$VF_SCALE" \
+    -sn -an -f yuv4mpegpipe -strict -1 - | \
 mbuffer $MBUFFER_ARG | \
 ffmpeg -hide_banner -init_hw_device opencl=ocl -filter_hw_device ocl -i pipe:0 \
- -vf "$VF_TONEMAP" \
- -sn -an -f yuv4mpegpipe -strict -1 - \
-| \
+    -vf "$VF_TONEMAP" \
+    -sn -an -f yuv4mpegpipe -strict -1 - | \
 mbuffer $MBUFFER_ARG | \
 ffmpeg -hide_banner -f yuv4mpegpipe -i pipe:0 \
- -i "$INPUT" \
- -map 0:v:0 \
- -map 1:a:0? \
- -c:v h264_nvenc \
- -preset p7 \
- -tune hq \
- -rc vbr -cq 19 -b:v 0 \
- -profile:v high \
- -spatial-aq 1 -temporal-aq 1 \
- -pix_fmt yuv420p \
- -color_primaries bt709 -color_trc bt709 -colorspace bt709 \
- -map_metadata -1 -map_chapters -1 -bitexact \
- -c:a aac -b:a 192k -ac 2 \
- -y "$OUTPUT"
+    -i "$INPUT" \
+    -map 0:v:0 \
+    -map 1:a:0? \
+    -c:v h264_nvenc \
+    -preset p7 \
+    -tune hq \
+    -rc vbr -cq 19 -b:v 0 \
+    -profile:v high \
+    -spatial-aq 1 -temporal-aq 1 \
+    -pix_fmt yuv420p \
+    -color_primaries bt709 -color_trc bt709 -colorspace bt709 \
+    -map_metadata -1 -map_chapters -1 -bitexact \
+    -c:a aac -b:a 192k -ac 2 \
+    -y "$OUTPUT"
+
+echo "Done! Output: $OUTPUT"
