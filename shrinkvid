@@ -2,5 +2,9 @@
 for f in "$@"; do
   [[ -f "$f" ]] || continue
   base="${f%.*}"
-  ffmpeg -i "$f" -c:v hevc_nvenc "${base}-opt.mp4"
+  mbuffer -m 2G -i "$f" | ffmpeg -hwaccel cuda -hwaccel_output_format cuda \
+    -i pipe:0 \
+    -c:v hevc_nvenc \
+    -c:a copy \
+    -y "${base}-opt.mp4"
 done
