@@ -2,7 +2,8 @@
 for f in "$@"; do
   [[ -f "$f" ]] || continue
   base="${f%.*}"
-  mbuffer -m 2G -i "$f" | ffmpeg -hwaccel cuda -hwaccel_output_format cuda \
+  mbuffer -m 4G -i "$f" | ffmpeg -hwaccel cuda -hwaccel_output_format cuda \
+    -threads 12 \
     -i pipe:0 \
     -c:v hevc_nvenc \
     -c:a copy \
