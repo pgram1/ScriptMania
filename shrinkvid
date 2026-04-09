@@ -6,5 +6,6 @@ for f in "$@"; do
     -i pipe:0 \
     -c:v hevc_nvenc \
     -c:a copy \
+    -b:v 0 \
     -y "${base}-opt.mp4"
 done
