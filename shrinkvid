@@ -7,5 +7,6 @@ for f in "$@"; do
     -c:v hevc_nvenc \
     -c:a copy \
     -b:v 0 \
+    -movflags +faststart \
     -y "${base}-opt.mp4"
 done
