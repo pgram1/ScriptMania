@@ -1,0 +1,32 @@
+$ cat /etc/dnscrypt-proxy/dnscrypt-proxy.toml 
+# /etc/dnscrypt-proxy/dnscrypt-proxy.toml
+
+# The address the proxy will listen on (local machine, standard DNS port)
+listen_addresses = ['127.0.0.1:53']
+
+# Use only the server defined in the [static] section below
+server_names = ['quad9-doh']
+
+# Force the use of DoH (DNS-over-HTTPS)
+force_tcp = true
+
+# DNS cache settings
+cache = true
+cache_size = 4096
+
+# Minimal logging
+log_level = 2
+
+# Static definition for Quad9
+[static]
+  [static.'quad9-doh']
+  stamp = 'sdns://AgYAAAAAAAAACDkuOS45LjEwILAZIHRLu3bJqwU-AeB7fgUORz0g95976kNfr-Q8nSQvE2RuczEwLnF1YWQ5Lm5ldDo0NDMKL2Rucy1xdWVyeQ'
+
+$ cat /etc/systemd/resolved.conf.d/config.conf 
+[Resolve]
+# Use Quad9's non-blocking IPv4 and IPv6 addresses with SNI for DoT
+DNS=127.0.0.1
+
+# Route all traffic through these servers
+Domains=~.
+
