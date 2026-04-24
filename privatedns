@@ -30,3 +30,13 @@ DNS=127.0.0.1
 # Route all traffic through these servers
 Domains=~.
 
+
+
+
+
+finally, in your wireguard conf under interfaces:
+
+PostUp = ip route add 9.9.9.10 dev enp3s0 via $(ip route show default dev enp3s0 | awk '{print $3}')
+PostDown = ip route del 9.9.9.10 dev enp3s0
+
+(replace interface with the one that you are using)
