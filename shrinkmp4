@@ -1,0 +1,4 @@
+ffmpeg -hwaccel cuda -hwaccel_output_format cuda -i "$1" \
+-vf "scale_cuda=w=1920:h=-1" \
+-c:v h264_nvenc -rc vbr -cq 30 -b:v 0 -preset p1 \
+-c:a aac -b:a 128k -ac 2 "$1-out.mp4"
