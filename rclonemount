@@ -1,0 +1,1 @@
+rclone mount -P -v --vfs-cache-mode full --allow-other $@
