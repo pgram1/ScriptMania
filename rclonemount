@@ -1,1 +1,1 @@
-rclone mount -P -v --vfs-cache-mode full --allow-other $@
+rclone mount -P -v --vfs-cache-mode writes --allow-other --dir-cache-time 1s $@
