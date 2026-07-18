@@ -55,5 +55,5 @@ systemctl restart unbound
 
 
 [your-server]:~ # crontab -l
-0 * * * * certbot renew --cert-name [your-domain-here] --force-renewal
+0 * * * * certbot renew
 
