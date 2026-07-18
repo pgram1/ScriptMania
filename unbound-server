@@ -1,0 +1,59 @@
+[your-server]:~ # cat /etc/unbound/unbound.conf
+server:
+
+    interface: 0.0.0.0@853
+    interface: ::0@853
+    tls-port: 853
+
+    interface: 0.0.0.0@443
+    interface: ::0@443
+    https-port: 443
+
+    access-control: 0.0.0.0/0 allow
+    access-control: ::0/0 allow
+
+    do-ip4: yes
+    do-ip6: yes
+    do-tcp: yes
+
+    do-udp: no
+
+    udp-upstream-without-downstream: yes
+
+    module-config: "iterator"
+
+    logfile: ""
+    verbosity: 0
+    log-queries: no
+    log-replies: no
+    log-servfail: no
+    log-local-actions: no
+    statistics-interval: 0
+    extended-statistics: no
+    val-log-level: 0
+
+    hide-identity: yes
+    hide-version: yes
+
+    qname-minimisation: yes
+
+    tls-service-key: "/etc/unbound/certs/privkey.pem"
+    tls-service-pem: "/etc/unbound/certs/fullchain.pem"
+
+
+
+[your-server]:~ # cat /etc/letsencrypt/renewal-hooks/deploy/unbound.sh
+#!/bin/bash
+# /etc/letsencrypt/renewal-hooks/deploy/unbound.sh
+mkdir -p /etc/unbound/certs
+cp /etc/letsencrypt/live/[your-domain-here]/privkey.pem   /etc/unbound/certs/privkey.pem
+cp /etc/letsencrypt/live/[your-domain-here]/fullchain.pem /etc/unbound/certs/fullchain.pem
+chown unbound:unbound /etc/unbound/certs/*.pem
+chmod 640 /etc/unbound/certs/*.pem
+systemctl restart unbound
+
+
+
+[your-server]:~ # crontab -l
+0 * * * * certbot renew --cert-name [your-domain-here] --force-renewal
+
