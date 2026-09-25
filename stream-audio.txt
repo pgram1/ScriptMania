@@ -1,0 +1,5 @@
+linux sender:
+ffmpeg -f pulse -i auto_null.monitor -c:a libopus -f mpegts udp://host:5000
+
+host:
+ffplay -fflags nobuffer udp://0.0.0.0:5000
