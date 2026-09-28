@@ -1,3 +1,3 @@
 #!/bin/bash
-nohup rclone serve http --addr=0.0.0.0:8088 --dir-cache-time 1s /home/ubuntu/wow/ &>/dev/null &
+nohup rclone serve http --addr=0.0.0.0:7777 --dir-cache-time 1s $1 &>/dev/null &
 
