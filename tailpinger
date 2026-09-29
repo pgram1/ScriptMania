@@ -1,0 +1,1 @@
+tailscale ping -c 0 --until-direct=false $1
