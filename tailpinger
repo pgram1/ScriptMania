@@ -1,1 +1,4 @@
-tailscale ping -c 0 --until-direct=false $1
+while true; do
+    sleep 1
+    tailscale ping -c 0 --until-direct=false "$1"
+done
