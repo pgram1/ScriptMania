@@ -1,4 +1,4 @@
 while true; do
-    sleep 1
-    tailscale ping -c 0 --until-direct=false "$1"
+    read -t 0.2
+    tailscale ping "$1"
 done
