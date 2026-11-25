@@ -1,0 +1,33 @@
+#!/bin/bash
+
+if [ $# -ne 1 ]; then
+    echo "Usage: $0 <youtube_url>"
+    exit 1
+fi
+
+URL="$1"
+
+yt-dlp -v -N 64 -ci --cookies "cookies.txt" \
+    --user-agent "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" \
+    --list-subs "$URL"
+
+echo ""
+echo "Enter language code or pattern (wildcards * ? allowed):"
+read -r SUB_LANG
+
+if [ -z "$SUB_LANG" ]; then
+    exit 1
+fi
+
+yt-dlp -v -N 64 -ci --cookies "cookies.txt" \
+    --user-agent "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" \
+    --write-subs \
+    --write-auto-subs \
+    --skip-download \
+    --sub-langs "$SUB_LANG" \
+    --sub-format srt \
+    -o "%(title)s [%(id)s] - %(subtitle)s.%(ext)s" \
+    "$URL"
+
+echo ""
+echo "Done."

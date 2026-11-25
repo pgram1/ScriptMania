@@ -1,0 +1,6 @@
+url="$1"
+while [ "$url" ]; do
+echo "$url"
+line=$(curl -sIL "$url" | grep -P '^[Ll]ocation:\s' | head -n 1)
+url=$(echo "$line" | sed -r 's/^[Ll]ocation:\s+(\S.*\S)\s*$/\1/g')
+done

@@ -1,0 +1,85 @@
+==============================================================
+ dnsproxy on a Tailscale VPS - DoH forwarder + tailnet resolver
+==============================================================
+
+--------------------------------------------------------------
+1. Note your Tailscale IP
+--------------------------------------------------------------
+tailscale ip -4
+
+--------------------------------------------------------------
+2. Download and install the dnsproxy binary
+--------------------------------------------------------------
+download binary from https://github.com/AdguardTeam/dnsproxy/releases
+put the binary at
+/usr/local/bin/dnsproxy
+
+--------------------------------------------------------------
+3. Point the VPS at itself and lock resolv.conf
+--------------------------------------------------------------
+sudo tailscale set --accept-dns=false
+sudo systemctl disable --now systemd-resolved
+sudo rm -f /etc/resolv.conf
+echo "nameserver 127.0.0.1" | sudo tee /etc/resolv.conf
+sudo chattr +i /etc/resolv.conf
+
+# To edit resolv.conf later: sudo chattr -i /etc/resolv.conf  (then re-lock with +i)
+
+--------------------------------------------------------------
+4. Create the systemd unit
+--------------------------------------------------------------
+sudo nano /etc/systemd/system/dnsproxy.service
+
+[Unit]
+Description=dnsproxy DoH forwarder
+After=network-online.target tailscaled.service
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/local/bin/dnsproxy \
+  -l 127.0.0.1 \
+  -l <TAILSCALE_IP> \
+  -p 53 \
+  -u https://dns.adguard-dns.com/dns-query \
+  -b 94.140.14.14:53 \
+  --cache
+Restart=always
+RestartSec=2
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target
+
+--------------------------------------------------------------
+5. Start it
+--------------------------------------------------------------
+sudo systemctl daemon-reload
+sudo systemctl enable --now dnsproxy
+sudo systemctl status dnsproxy
+
+--------------------------------------------------------------
+6. Verify both paths resolve
+--------------------------------------------------------------
+dig @127.0.0.1 example.com +short
+dig @<TAILSCALE_IP> example.com +short
+
+--------------------------------------------------------------
+7. Point the tailnet at it
+--------------------------------------------------------------
+In the Tailscale admin console:
+  https://login.tailscale.com/admin/dns
+  -> Nameservers -> add custom nameserver: <TAILSCALE_IP>
+  -> turn ON "Override local DNS"
+
+==============================================================
+ Notes
+==============================================================
+- dnsproxy binds only 127.0.0.1 and <TAILSCALE_IP>, never the public
+  interface, so it is not an open resolver and needs no firewall rule.
+- "chattr +i" blocks any daemon from overwriting /etc/resolv.conf.
+- "--accept-dns=false" stops Tailscale itself from rewriting it.
+- To change the DoH server later: edit the -u URL in the unit, then
+  sudo systemctl daemon-reload && sudo systemctl restart dnsproxy
+- If status=203/EXEC appears, the binary lacks the exec bit: re-run
+  the install command in step 2 (or: sudo chmod +x /usr/local/bin/dnsproxy).
+==============================================================

@@ -1,0 +1,74 @@
+#!/bin/bash
+# =============================================================================
+# Linux Bash script: Convert all image files (including DNG and other RAWs)
+# in a directory to 100% quality JPGs with the SAME base filename.
+#
+# Examples:
+#   photo.dng   → photo.jpg
+#   image.png   → image.jpg
+#   picture.JPG → picture.jpg (re-encoded at 100% quality)
+#
+# Usage:
+#   ./convert-to-jpg.sh              # current directory
+#   ./convert-to-jpg.sh /path/to/dir # specific directory
+#
+# Requirements:
+#   ImageMagick (convert or magick command)
+#   sudo apt install imagemagick      # Debian/Ubuntu
+#   sudo dnf install ImageMagick      # Fedora
+#   For DNG/RAW support: most distros include libraw automatically.
+# =============================================================================
+
+set -euo pipefail
+
+# Directory to process (default = current directory)
+DIR="${1:-.}"
+
+if [ ! -d "$DIR" ]; then
+  echo "❌ Error: Directory '$DIR' does not exist." >&2
+  exit 1
+fi
+
+echo "🔄 Converting images to 100% quality JPGs in: $DIR"
+echo "   (original files are kept, new .jpg files are created/overwritten)"
+
+# Use 'magick' if available (ImageMagick 7+), otherwise fall back to 'convert'
+if command -v magick >/dev/null 2>&1; then
+  CONVERT_CMD="magick"
+else
+  CONVERT_CMD="convert"
+fi
+
+# Process all common image files (case-insensitive)
+# Add more extensions if you need them (e.g. *.heif *.avif)
+find "$DIR" -maxdepth 1 -type f \( \
+  -iname "*.jpg" -o -iname "*.jpeg" -o \
+  -iname "*.png" -o \
+  -iname "*.tif" -o -iname "*.tiff" -o \
+  -iname "*.gif" -o \
+  -iname "*.bmp" -o \
+  -iname "*.webp" -o \
+  -iname "*.heic" -o \
+  -iname "*.dng" -o \
+  -iname "*.cr2" -o -iname "*.cr3" -o \
+  -iname "*.nef" -o -iname "*.arw" -o \
+  -iname "*.rw2" -o -iname "*.orf" -o -iname "*.raf" \
+\) | while read -r file; do
+  # Extract base name without extension
+  base="${file%.*}"
+  output="${base}.jpg"
+
+  echo "   📸 Converting: $(basename "$file") → $(basename "$output")"
+
+  # Convert with 100% quality (JPEG quality scale)
+  "$CONVERT_CMD" "$file" -quality 100 "$output"
+
+  if [ $? -eq 0 ]; then
+    echo "   ✅ Done: $(basename "$output")"
+  else
+    echo "   ❌ Failed: $(basename "$file")" >&2
+  fi
+done
+
+echo "🎉 Conversion complete! All images are now high-quality JPGs."
+echo "   Tip: Run 'ls *.jpg' to see the results."

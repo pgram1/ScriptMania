@@ -1,0 +1,99 @@
+===============================================================================
+            TAILSCALE DERP SERVER – COMPLETE SETUP REFERENCE
+===============================================================================
+
+This guide assumes you have:
+- A Ubuntu server with a public IP
+- A domain name (e.g., derp.example.com) pointing to that IP
+- Tailscale already installed on all nodes
+
+------------------------------------------------------------------------------
+1. SYSTEMD SERVICE FILE
+------------------------------------------------------------------------------
+Path: /etc/systemd/system/derper.service
+
+[Unit]
+Description=Tailscale DERP relay server
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=derper
+Group=derper
+ExecStart=/home/derper/go/bin/derper \
+          -hostname <YOUR-DOMAIN> \
+          -certmode letsencrypt \
+          -certdir /home/derper/certs/ \
+          -c /home/derper/derper.conf
+Restart=always
+RestartSec=10
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target
+
+Notes:
+- The binary is built with: go install tailscale.com/cmd/derper@latest
+- Ports 80, 443 (TCP) and 3478 (UDP) must be open in the firewall/security group.
+- setcap CAP_NET_BIND_SERVICE=+eip /home/derper/go/bin/derper
+
+------------------------------------------------------------------------------
+2. TAILSCALE ACL DERPMAP SNIPPET
+------------------------------------------------------------------------------
+Path: Tailscale Admin Console → ACLs
+
+Add the following block to your existing policy.  Region IDs must be ≥ 900.
+
+{
+  // ... your existing rules (acls, groups, etc.) ...
+
+  "derpMap": {
+    "OmitDefaultRegions": true,   // remove this line if you want fallback to public relays
+    "Regions": {
+      "<REGION-ID>": {
+        "RegionID": <REGION-ID>,
+        "RegionCode": "<REGION-CODE>",
+        "RegionName": "<REGION-NAME>",
+        "Nodes": [
+          {
+            "Name": "<NODE-NAME>",
+            "RegionID": <REGION-ID>,
+            "HostName": "<YOUR-DOMAIN>"
+          }
+        ]
+      }
+    }
+  }
+}
+
+Example:
+  "900": {
+    "RegionID": 900,
+    "RegionCode": "eu1",
+    "RegionName": "My EU Server",
+    "Nodes": [
+      {
+        "Name": "derp1",
+        "RegionID": 900,
+        "HostName": "derp.mydomain.com"
+      }
+    ]
+  }
+
+------------------------------------------------------------------------------
+3. IMPORTANT NOTES
+------------------------------------------------------------------------------
+- With "OmitDefaultRegions": true, clients will rely only on your server.
+  If it goes down, clients behind restrictive NATs may lose connectivity.
+
+- Let's Encrypt certificates are renewed automatically – no extra cron jobs.
+
+- For STUN, UDP port 3478 must be reachable.
+
+- The config file (-c) is required by recent derper versions; derper will
+  populate it automatically after first start.
+
+===============================================================================
+
+tailscale netcheck

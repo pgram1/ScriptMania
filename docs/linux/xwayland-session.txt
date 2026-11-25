@@ -1,0 +1,5 @@
+Xwayland :10 -decorate &
+
+resize window however you please, it will be your default session resolution
+
+DISPLAY=:10 icewm &

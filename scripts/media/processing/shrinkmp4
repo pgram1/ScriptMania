@@ -1,0 +1,1 @@
+ffmpeg -i "$1" -vcodec h264_amf -rc cqp -qp_i 28 -qp_p 28 -c:a aac -b:a 96k -ac 2 -ignore_unknown -pix_fmt yuv420p "$1-output.mp4"

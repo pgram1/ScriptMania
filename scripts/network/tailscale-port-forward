@@ -1,0 +1,43 @@
+sudo bash <<'EOF'
+set -euo pipefail
+
+TS_IF="tailscale0"          # tailscale interface name on the VPS
+VPS_TS_IP="100.64.2.1"     # VPS tailscale IP
+LOCAL_IP="100.64.2.2"       # local computer tailscale IP
+PORTS="8080 8088"
+PROTOS="tcp udp"
+
+# add <table> <chain> <rule...>
+# Inserts the rule at the TOP of the chain, only if it isn't already there.
+add() {
+  local table=$1 chain=$2; shift 2
+  iptables -w -t "$table" -C "$chain" "$@" 2>/dev/null \
+    || iptables -w -t "$table" -I "$chain" "$@"
+}
+
+for proto in $PROTOS; do
+  for port in $PORTS; do
+    # Incoming from the internet (anything not from tailscale) -> local computer
+    add nat PREROUTING ! -i "$TS_IF" -p "$proto" --dport "$port" \
+        -j DNAT --to-destination "$LOCAL_IP:$port"
+
+    # Allow the forwarded traffic through the filter table
+    add filter FORWARD -o "$TS_IF" -d "$LOCAL_IP" -p "$proto" --dport "$port" -j ACCEPT
+
+    # Rewrite the source so replies come back through the VPS
+    add nat POSTROUTING -o "$TS_IF" -d "$LOCAL_IP" -p "$proto" --dport "$port" \
+        -j SNAT --to-source "$VPS_TS_IP"
+  done
+done
+
+# Allow reply traffic from the local computer back out to the internet
+add filter FORWARD -i "$TS_IF" -s "$LOCAL_IP" \
+    -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+# Clamp TCP MSS so packets fit the tailscale MTU (avoids stalls on large TCP transfers)
+add mangle FORWARD -o "$TS_IF" -d "$LOCAL_IP" -p tcp \
+    --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+
+echo "Done. Current forwarding rules:"
+iptables -w -t nat -S PREROUTING | grep "$LOCAL_IP" || true
+EOF

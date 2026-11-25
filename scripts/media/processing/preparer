@@ -1,0 +1,1 @@
+ffmpeg -i "$1" -vf "subtitles=$1.srt" -c:v h264_nvenc -rc vbr -cq 30 -b:v 0 -preset p1 -pix_fmt yuv420p -c:a aac -b:a 128k -ac 2 "$1-out.mp4"

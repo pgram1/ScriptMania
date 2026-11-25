@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+while true; do
+tailscale ping --until-direct=false "$1"
+done

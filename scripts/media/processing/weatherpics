@@ -1,0 +1,42 @@
+#!/bin/bash
+
+export TZ="UTC";
+
+END_TIMESTAMP=$(date +%Y%m%d%H%M);
+
+START_TIMESTAMP=$(date -d "-1440 minutes" +%Y%m%d%H%M);
+
+echo "The start is $START_TIMESTAMP";
+echo "The   end is $END_TIMESTAMP";
+
+for ((i=0; i<=1440; i++))
+do
+	incr=$(date -d "-$i minutes" +%Y%m%d%H%M);
+	url="http://en.sat24.com/image?type=infraPolair&region=eu&timestamp=$incr";
+	
+	
+	SIZE=$(curl -s -I -X GET "$url" | grep -i content-length | awk '{print $2}');
+if [ $SIZE -gt 2000 ]; then 
+  echo "There is an image at $url";
+  curl "http://en.sat24.com/image?type=infraPolair&region=eu&timestamp=$incr" -o $i.jpg;
+fi
+done
+
+find . -type f -size -2k -delete;
+
+ls -v . > out.txt;
+
+tail -n 1 out.txt | xargs -d '\n' sed -i '$d' out.txt;
+
+sed -i "s/^/file \'/" out.txt;
+sed -i "s/$/\'/" out.txt;
+
+tac out.txt > reversed.txt;
+
+rm out.txt;
+
+ffmpeg -f concat -safe 0 -i reversed.txt -c copy slideshow.mkv;
+
+ffmpeg -stream_loop 5 -i slideshow.mkv -r 30 -c:v libx264 -pix_fmt yuv444p -filter:v "setpts=2.0*PTS" weather.mkv;
+
+rm *jpg *txt slideshow.mkv;

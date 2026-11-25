@@ -1,0 +1,16 @@
+#!/bin/bash
+Url=$1
+DefaultQual="bv[height<=720]+ba"
+UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"
+
+read -p "Show qualities? (y/n): " Choice
+
+if [[ "$Choice" =~ ^[Yy]$ ]]; then
+    yt-dlp -v -N 64 -ci --no-overwrites --retries 10 --fragment-retries 10 --cookies "cookies.txt" --user-agent "$UA" -F "$Url"
+    read -p "Quality: " Qual
+fi
+
+Qual=${Qual:-$DefaultQual}
+
+yt-dlp -v -N 64 -ci --concurrent-fragments 16 --no-overwrites --retries 10 --fragment-retries 10 --cookies "cookies.txt" --user-agent "$UA" -f "$Qual" "$Url"
+wait
